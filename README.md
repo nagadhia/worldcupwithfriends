@@ -55,7 +55,24 @@ That's it — deploy, add the key, and share the Vercel link with Chris.
 
 ---
 
+### Optional: "Who's favoured" title-odds predictor
+The site can show a prediction bar — each player's combined chance of owning the eventual World Cup winner, from bookmakers' outright odds. It's **optional**: if you skip this, the panel simply doesn't appear and everything else works.
+
+To switch it on:
+1. Sign up free at **https://the-odds-api.com** — you get an API key and a monthly request quota.
+2. In Vercel → **Settings → Environment Variables**, add a second variable:
+   - **Name:** `THE_ODDS_API_KEY`
+   - **Value:** the key from step 1
+3. Redeploy.
+
+The function only checks the odds once every 3 hours (outright prices barely move), so it stays well within the free quota.
+
+**Heads-up:** free odds tiers change often, and the specific "tournament winner" market isn't guaranteed to be free forever. To check whether yours is working, open `https://your-site.vercel.app/api/wc` and look at the `odds` field — `"available": true` means it's live; anything else (e.g. `"market_unavailable"` or `"bad_key"`) tells you why the panel is hidden. The rest of the tracker is unaffected regardless.
+
+Note this metric predicts who lifts the trophy — which favours the big nations — and is a different lens from your scoreboard, which rewards group-stage points and doubles each captain.
+
 ### Good to know
+- **Captains score double.** Brazil (Nandini) and Argentina (Chris) count their league points twice on the scoreboard. To change captains later, edit the `CAPTAINS` list near the top of `index.html`'s `<script>`.
 - **Free limits:** the data feed allows 10 requests/minute. The function caches for 60s, so a normal office crowd is nowhere near it. If you ever see a rate-limit note, wait a minute.
 - **It updates itself** every 60 seconds while the page is open; there's also a Refresh button.
 - **Don't want GitHub?** Install the Vercel CLI (`npm i -g vercel`), run `vercel` inside the project folder, and follow the prompts. Then add the environment variable with `vercel env add FOOTBALL_DATA_TOKEN`.
