@@ -9,28 +9,27 @@
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
 <style>
   :root {
-    --paper:    #F7F3EA;  /* warm cream background */
-    --panel:    #FFFFFF;  /* cards */
-    --panel-2:  #FBF7EF;  /* card gradient base */
-    --line:     #E7DFD0;  /* hairline */
-    --tint:     #F3EDE1;  /* subtle fill / row separators */
-    --text:     #20242C;  /* near-black ink */
-    --muted:    #837D70;  /* warm grey */
-    --nandini:  #A4161A;  /* deep red */
-    --chris:    #1B7A3C;  /* football green */
-    --gold:     #B7791F;  /* amber accent (captain) */
-    --through:  #2E9E44;  /* qualifying */
-    --third:    #C08A2E;  /* third-place race */
-    --out:      #9A938A;  /* out / dimmed */
+    --ink:        #0E1726;
+    --ink-2:      #131F35;
+    --ink-3:      #1B2A45;
+    --line:       #26375A;
+    --text:       #EAEEF6;
+    --muted:      #8696B0;
+    --nandini:    #FF5D6C;  /* Nandini's colour */
+    --chris:      #38D6C0;  /* Chris's colour */
+    --gold:       #E9B949;
+    --through:    #51CF66;
+    --third:      #E3A008;
+    --out:        #C9485B;
   }
   * { box-sizing: border-box; }
   html { -webkit-text-size-adjust: 100%; }
   body {
     margin: 0;
     background:
-      radial-gradient(1200px 600px at 80% -10%, rgba(27,122,60,0.06), transparent 60%),
-      radial-gradient(1000px 500px at 0% -5%, rgba(164,22,26,0.05), transparent 55%),
-      var(--paper);
+      radial-gradient(1200px 600px at 80% -10%, rgba(56,214,192,0.08), transparent 60%),
+      radial-gradient(1000px 500px at 0% -5%, rgba(255,93,108,0.08), transparent 55%),
+      var(--ink);
     color: var(--text);
     font-family: "Space Grotesk", system-ui, sans-serif;
     line-height: 1.45;
@@ -54,16 +53,16 @@
   .meta .stamp { font-family: "Space Mono", monospace; }
   .btn { appearance: none; cursor: pointer; font-family: "Space Grotesk", sans-serif;
     font-weight: 600; font-size: 13px; color: var(--text);
-    background: var(--panel); border: 1px solid var(--line); border-radius: 999px;
+    background: var(--ink-3); border: 1px solid var(--line); border-radius: 999px;
     padding: 7px 14px; margin-left: 8px; transition: border-color .15s, background .15s; }
-  .btn:hover { border-color: var(--gold); background: var(--tint); }
-  .btn:focus-visible { outline: 2px solid var(--nandini); outline-offset: 2px; }
+  .btn:hover { border-color: var(--gold); }
+  .btn:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
 
-  .board { margin: 26px 0 8px; background: linear-gradient(180deg, var(--panel), var(--panel-2));
+  .board { margin: 26px 0 8px; background: linear-gradient(180deg, var(--ink-2), rgba(19,31,53,0.55));
     border: 1px solid var(--line); border-radius: 18px; padding: 26px 22px 20px;
-    position: relative; overflow: hidden; box-shadow: 0 1px 0 rgba(0,0,0,0.02); }
+    position: relative; overflow: hidden; }
   .board::before { content: ""; position: absolute; inset: 0 0 auto 0; height: 3px;
-    background: linear-gradient(90deg, var(--nandini) 0 50%, var(--chris) 50% 100%); opacity: .95; }
+    background: linear-gradient(90deg, var(--nandini) 0 50%, var(--chris) 50% 100%); opacity: .9; }
   .score { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 10px; }
   .side { text-align: center; min-width: 0; }
   .side .who { font-family: "Anton", sans-serif; font-size: clamp(18px, 4vw, 32px);
@@ -72,8 +71,6 @@
   .side.chris .who { color: var(--chris); }
   .side .pts { font-family: "Anton", sans-serif; font-size: clamp(52px, 15vw, 104px);
     line-height: 0.8; margin-top: 8px; font-variant-numeric: tabular-nums; }
-  .side.nandini .pts { color: var(--nandini); }
-  .side.chris .pts { color: var(--chris); }
   .side .ptlabel { font-family: "Space Mono", monospace; font-size: 10.5px; letter-spacing: .18em;
     text-transform: uppercase; color: var(--muted); margin-top: 10px; }
   .dash { font-family: "Anton", sans-serif; font-size: clamp(30px, 7vw, 60px);
@@ -83,30 +80,9 @@
     font-family: "Space Mono", monospace; font-size: 12px; color: var(--muted); text-align: center; }
   .subrow b { color: var(--text); font-weight: 700; }
   .lead-tag { align-self: center; font-family: "Space Mono", monospace; font-size: 11px;
-    letter-spacing: .14em; text-transform: uppercase; color: var(--paper);
-    background: var(--text); padding: 4px 9px; border-radius: 999px; white-space: nowrap; }
-  .lead-tag.tied { background: var(--tint); color: var(--muted); }
-
-  .nextup { margin-top: 14px; }
-  .nx-card { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; }
-  .nx-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin-bottom: 12px; }
-  .nx-label { font-family: "Space Mono", monospace; font-size: 11px; letter-spacing: .18em; text-transform: uppercase; color: var(--gold); }
-  .nx-label.live { color: var(--nandini); }
-  .nx-when { font-family: "Space Mono", monospace; font-size: 12px; color: var(--muted); }
-  .nx-teams { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 12px; }
-  .nx-team { display: flex; align-items: center; gap: 10px; min-width: 0; }
-  .nx-team.home { justify-content: flex-end; text-align: right; }
-  .nx-team.away { justify-content: flex-start; }
-  .nx-team img { width: 30px; height: 30px; object-fit: contain; flex: none; }
-  .nx-team .nm { font-family: "Anton", sans-serif; font-size: clamp(16px, 3.4vw, 24px); text-transform: uppercase;
-    letter-spacing: .01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .nx-team .nm.nandini { color: var(--nandini); }
-  .nx-team .nm.chris { color: var(--chris); }
-  .nx-cap { color: var(--gold); font-size: 13px; flex: none; }
-  .nx-mid { font-family: "Anton", sans-serif; font-size: 22px; color: var(--muted); padding: 0 4px;
-    font-variant-numeric: tabular-nums; white-space: nowrap; }
-  .nx-foot { margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--line);
-    font-family: "Space Mono", monospace; font-size: 11px; color: var(--muted); letter-spacing: .08em; text-transform: uppercase; }
+    letter-spacing: .14em; text-transform: uppercase; color: var(--ink);
+    background: var(--gold); padding: 4px 9px; border-radius: 999px; white-space: nowrap; }
+  .lead-tag.tied { background: var(--line); color: var(--text); }
 
   .sec-head { display: flex; align-items: baseline; gap: 12px; margin: 40px 0 14px; }
   .sec-head h2 { font-family: "Anton", sans-serif; font-weight: 400; text-transform: uppercase;
@@ -114,7 +90,7 @@
   .sec-head .rule { flex: 1; height: 1px; background: var(--line); }
 
   .picks { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-  .pickcol { background: var(--panel); border: 1px solid var(--line); border-radius: 14px;
+  .pickcol { background: var(--ink-2); border: 1px solid var(--line); border-radius: 14px;
     padding: 14px 14px 8px; border-top-width: 3px; }
   .pickcol.nandini { border-top-color: var(--nandini); }
   .pickcol.chris { border-top-color: var(--chris); }
@@ -122,27 +98,23 @@
     font-size: 17px; margin: 0 0 10px; letter-spacing: .03em; }
   .pickcol.nandini h3 { color: var(--nandini); }
   .pickcol.chris h3 { color: var(--chris); }
-  .team-line { display: grid; grid-template-columns: 18px 1fr auto auto auto; align-items: center;
-    gap: 9px; padding: 7px 2px; border-top: 1px solid var(--tint); font-size: 14px; }
-  .capbadge { font-family: "Space Mono", monospace; font-size: 9px; font-weight: 700; letter-spacing: .03em;
-    color: #fff; background: var(--gold); padding: 1px 5px; border-radius: 6px; margin-left: 6px;
-    vertical-align: middle; white-space: nowrap; }
-  .capstar { color: var(--gold); font-size: 12px; margin-left: 3px; }
+  .team-line { display: grid; grid-template-columns: 18px 1fr auto auto; align-items: center;
+    gap: 9px; padding: 7px 2px; border-top: 1px solid var(--ink-3); font-size: 14px; }
   .team-line:first-of-type { border-top: 0; }
   .team-line img { width: 18px; height: 18px; object-fit: contain; }
   .team-line .grp { font-family: "Space Mono", monospace; font-size: 11px; color: var(--muted); }
   .chip { font-family: "Space Mono", monospace; font-size: 10.5px; letter-spacing: .04em;
     text-transform: uppercase; padding: 2px 7px; border-radius: 999px;
     border: 1px solid transparent; white-space: nowrap; }
-  .chip.through { color: var(--through); border-color: rgba(46,158,68,.35); background: rgba(46,158,68,.10); }
-  .chip.third   { color: var(--third);   border-color: rgba(192,138,46,.35); background: rgba(192,138,46,.12); }
-  .chip.out     { color: var(--out);     border-color: rgba(154,147,138,.45); background: rgba(154,147,138,.14); }
+  .chip.through { color: var(--through); border-color: rgba(81,207,102,.35); background: rgba(81,207,102,.08); }
+  .chip.third   { color: var(--third);   border-color: rgba(227,160,8,.35);  background: rgba(227,160,8,.08); }
+  .chip.out     { color: var(--out);     border-color: rgba(201,72,91,.4);   background: rgba(201,72,91,.1); }
   .chip.neutral { color: var(--muted);   border-color: var(--line); }
   .pts-pill { font-family: "Space Mono", monospace; font-weight: 700; font-size: 13px;
     min-width: 30px; text-align: right; }
 
   .groups { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-  .gtable { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+  .gtable { background: var(--ink-2); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
   .gtable .cap { font-family: "Anton", sans-serif; font-size: 14px; letter-spacing: .08em;
     text-transform: uppercase; padding: 11px 14px; border-bottom: 1px solid var(--line);
     display: flex; justify-content: space-between; align-items: center; }
@@ -150,25 +122,25 @@
   table { width: 100%; border-collapse: collapse; }
   th, td { font-family: "Space Mono", monospace; font-size: 12px; text-align: right; padding: 7px 6px; }
   th { color: var(--muted); font-weight: 400; font-size: 10px; letter-spacing: .08em;
-    text-transform: uppercase; border-bottom: 1px solid var(--line); }
+    text-transform: uppercase; border-bottom: 1px solid var(--ink-3); }
   th.tname, td.tname { text-align: left; }
   td.tname { font-family: "Space Grotesk", sans-serif; font-size: 13.5px; font-weight: 500;
     display: flex; align-items: center; gap: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   td.tname img { width: 17px; height: 17px; object-fit: contain; flex: none; }
   td.pos { color: var(--muted); width: 18px; }
-  tr.row { border-top: 1px solid var(--tint); }
+  tr.row { border-top: 1px solid var(--ink-3); }
   tr.row td.pts { font-weight: 700; color: var(--text); }
   tr.nandini td.tname { box-shadow: inset 3px 0 0 var(--nandini); }
   tr.chris td.tname { box-shadow: inset 3px 0 0 var(--chris); }
   tr.nandini td.tname::after,
   tr.chris td.tname::after { font-family: "Space Mono", monospace; font-size: 9px; letter-spacing: .1em;
     padding: 1px 5px; border-radius: 4px; margin-left: auto; }
-  tr.nandini td.tname::after { content: "N"; color: var(--nandini); background: rgba(164,22,26,.10); }
-  tr.chris td.tname::after { content: "C"; color: var(--chris); background: rgba(27,122,60,.12); }
+  tr.nandini td.tname::after { content: "N"; color: var(--nandini); background: rgba(255,93,108,.14); }
+  tr.chris td.tname::after { content: "C"; color: var(--chris); background: rgba(56,214,192,.14); }
   tr.qual td.pos { color: var(--through); }
   tr.qual td.pos::before { content: "\25B8 "; }
 
-  .editor { display: none; margin: 18px 0 0; background: var(--panel);
+  .editor { display: none; margin: 18px 0 0; background: var(--ink-2);
     border: 1px solid var(--gold); border-radius: 14px; padding: 16px; }
   .editor.open { display: block; }
   .editor p { margin: 0 0 14px; color: var(--muted); font-size: 13px; }
@@ -177,14 +149,14 @@
   .edit-team .seg { margin-left: auto; display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
   .edit-team .seg button { appearance: none; cursor: pointer; border: 0; background: transparent; color: var(--muted);
     font-family: "Space Mono", monospace; font-size: 11px; padding: 4px 9px; }
-  .edit-team .seg button.on-nandini { background: var(--nandini); color: #fff; }
-  .edit-team .seg button.on-chris { background: var(--chris); color: #fff; }
+  .edit-team .seg button.on-nandini { background: var(--nandini); color: var(--ink); }
+  .edit-team .seg button.on-chris { background: var(--chris); color: var(--ink); }
   .edit-actions { margin-top: 16px; display: flex; gap: 10px; align-items: center; }
   .edit-actions .saved { font-size: 12px; color: var(--through); font-family: "Space Mono", monospace; display: none; }
 
-  .banner { background: var(--panel); border: 1px solid var(--line); border-left: 3px solid var(--gold);
+  .banner { background: var(--ink-2); border: 1px solid var(--line); border-left: 3px solid var(--gold);
     border-radius: 10px; padding: 14px 16px; margin: 22px 0; font-size: 14px; color: var(--text); }
-  .banner code { font-family: "Space Mono", monospace; background: var(--tint); padding: 1px 6px; border-radius: 5px; font-size: 12.5px; }
+  .banner code { font-family: "Space Mono", monospace; background: var(--ink-3); padding: 1px 6px; border-radius: 5px; font-size: 12.5px; }
   .empty { color: var(--muted); font-size: 13px; padding: 8px 2px; }
 
   footer { margin-top: 44px; padding-top: 18px; border-top: 1px solid var(--line); color: var(--muted); font-size: 12.5px; }
@@ -243,13 +215,11 @@
       </div>
     </div>
     <div class="subrow">
-      <div>Goals for <b id="nandiniGoals">0</b></div>
+      <div>Through: <b id="nandiniThrough">0</b> &middot; Goals <b id="nandiniGoals">0</b></div>
       <div class="lead-tag tied" id="leadTag">&mdash;</div>
-      <div>Goals for <b id="chrisGoals">0</b></div>
+      <div>Through: <b id="chrisThrough">0</b> &middot; Goals <b id="chrisGoals">0</b></div>
     </div>
   </section>
-
-  <section class="nextup" id="nextup" aria-label="Next match"></section>
 
   <div class="sec-head"><h2>The picks</h2><div class="rule"></div></div>
   <div class="picks">
@@ -265,14 +235,12 @@
       <span><i class="sw" style="background:var(--through)"></i> Top 2 &mdash; qualifying</span>
       <span><i class="sw" style="background:var(--third)"></i> 3rd &mdash; best-thirds race</span>
       <span><i class="sw" style="background:var(--out)"></i> Out</span>
-      <span><i class="sw" style="background:var(--gold)"></i> Captain &times;2</span>
       <span><i class="sw" style="background:var(--nandini)"></i> Nandini</span>
       <span><i class="sw" style="background:var(--chris)"></i> Chris</span>
     </div>
     <p><b>Scoreboard</b> = the total league points each person's teams have earned
-      (win 3, draw 1), with each captain &mdash; <b>Brazil</b> for Nandini, <b>Argentina</b> for Chris &mdash;
-      counting double. The top two in each group advance, plus the eight best third-placed
-      teams &mdash; so 3rd place is still alive, marked amber.
+      (win 3, draw 1). <b>Through</b> counts teams currently in a top-2 spot. The eight
+      best third-placed teams also advance, so 3rd place is still alive &mdash; that's marked amber.
       Data: football-data.org, refreshed every 60s. <span id="srcStamp"></span></p>
   </footer>
 
@@ -329,7 +297,7 @@ const ALIASES = {
   congodr:"drcongo", drcongo:"drcongo", democraticrepublicofthecongo:"drcongo",
   congo:"drcongo",
   usa:"usa", unitedstates:"usa", unitedstatesofamerica:"usa", us:"usa",
-  capeverde:"capeverde", caboverde:"capeverde", capeverdeislands:"capeverde", cv:"capeverde",
+  capeverde:"capeverde", caboverde:"capeverde",
   curacao:"curacao",
   southafrica:"southafrica"
 };
@@ -346,11 +314,6 @@ function buildOwnerMap() {
 }
 let PICKS = loadPicks();
 let OWNER = buildOwnerMap();
-
-/* ---- captains: their league points count double ---- */
-const CAPTAINS = ["Brazil", "Argentina"];
-const CAPSET = new Set(CAPTAINS.map(norm));
-function isCaptain(name) { return CAPSET.has(norm(name)); }
 
 function loadPicks() {
   try { const raw = localStorage.getItem(STORE_KEY); if (raw) return JSON.parse(raw); } catch (e) {}
@@ -380,16 +343,19 @@ function statusFor(row) {
 function ord(n) { const s = ["th","st","nd","rd"], v = n % 100; return s[(v-20)%10] || s[v] || s[0]; }
 
 function renderScore() {
-  const tally = { nandini:{pts:0,gf:0}, chris:{pts:0,gf:0} };
+  const tally = { nandini:{pts:0,gf:0,thr:0}, chris:{pts:0,gf:0,thr:0} };
   for (const owner of ["nandini","chris"]) {
     for (const name of PICKS[owner]) {
       const row = findTeam(name); if (!row) continue;
-      tally[owner].pts += (row.points || 0) * (isCaptain(name) ? 2 : 1);
+      tally[owner].pts += row.points || 0;
       tally[owner].gf  += row.gf || 0;
+      if (row.position <= 2) tally[owner].thr += 1;
     }
   }
   nandiniPts.textContent = PICKS.nandini.length ? tally.nandini.pts : "\u2013";
   chrisPts.textContent   = PICKS.chris.length   ? tally.chris.pts   : "\u2013";
+  nandiniThrough.textContent = tally.nandini.thr;
+  chrisThrough.textContent   = tally.chris.thr;
   nandiniGoals.textContent = tally.nandini.gf;
   chrisGoals.textContent   = tally.chris.gf;
 
@@ -419,7 +385,7 @@ function renderPickLists() {
       el.className = "team-line";
       el.innerHTML =
         (row.crest ? '<img src="' + row.crest + '" alt="">' : "<span></span>") +
-        "<span>" + row.name + (isCaptain(row.name) ? ' <span class="capbadge" title="Captain — points count double">C&times;2</span>' : "") + "</span>" +
+        "<span>" + row.name + "</span>" +
         '<span class="grp">' + GROUP_LABEL(row.group) + " \u00B7 " + row.position + ord(row.position) + "</span>" +
         '<span class="chip ' + st.cls + '">' + st.label + "</span>" +
         '<span class="pts-pill">' + row.points + "</span>";
@@ -448,8 +414,7 @@ function renderGroups() {
       body += '<tr class="row ' + (owner || "") + " " + qual + '">' +
         '<td class="pos">' + t.position + "</td>" +
         '<td class="tname">' + (t.crest ? '<img src="' + t.crest + '" alt="">' : "") +
-          "<span>" + (t.shortName || t.name) + "</span>" +
-          (isCaptain(t.name) ? '<span class="capstar" title="Captain — points count double">&#9733;</span>' : "") + "</td>" +
+          "<span>" + (t.shortName || t.name) + "</span></td>" +
         "<td>" + t.played + "</td><td>" + t.won + "</td><td>" + t.draw + "</td><td>" + t.lost + "</td>" +
         "<td>" + (t.gd > 0 ? "+" + t.gd : t.gd) + '</td><td class="pts">' + t.points + "</td></tr>";
     }
@@ -517,54 +482,7 @@ async function load() {
   }
 }
 
-function relTime(date) {
-  const diff = date - new Date();
-  if (diff <= 0) return "kicking off";
-  const m = Math.round(diff / 60000);
-  if (m < 60) return "in " + m + "m";
-  const h = Math.floor(m / 60), mm = m % 60;
-  if (h < 24) return "in " + h + "h" + (mm ? " " + mm + "m" : "");
-  const d = Math.floor(h / 24);
-  return "in " + d + "d" + ((h % 24) ? " " + (h % 24) + "h" : "");
-}
-function whenLabel(date) {
-  return date.toLocaleString([], { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
-}
-
-function renderNext() {
-  const host = document.getElementById("nextup");
-  const ms = DATA?.matches || [];
-  const live = ms.find((m) => m.status === "IN_PLAY" || m.status === "PAUSED");
-  const next = ms.find((m) => m.status === "SCHEDULED" || m.status === "TIMED");
-  const m = live || next;
-  if (!m) { host.innerHTML = ""; return; }
-  const isLive = !!live;
-  const d = new Date(m.utcDate);
-  const ownerCls = (name) => { const o = ownerOf(name); return o ? " " + o : ""; };
-  const capMark = (name) => isCaptain(name) ? '<span class="nx-cap" title="Captain">&#9733;</span>' : "";
-  const mid = isLive ? ((m.homeScore ?? 0) + " &ndash; " + (m.awayScore ?? 0)) : "v";
-  const label = isLive ? '<span class="nx-label live">&#9679; Live now</span>'
-                       : '<span class="nx-label">Next up</span>';
-  const when = isLive ? '<span class="nx-when">In play</span>'
-                      : '<span class="nx-when">' + whenLabel(d) + " &middot; " + relTime(d) + "</span>";
-  const where = m.group ? GROUP_LABEL(m.group) : (m.stage || "").replace(/_/g, " ");
-  host.innerHTML =
-    '<div class="nx-card"><div class="nx-head">' + label + when + "</div>" +
-    '<div class="nx-teams">' +
-      '<div class="nx-team home">' +
-        '<span class="nm' + ownerCls(m.home) + '">' + m.home + "</span>" + capMark(m.home) +
-        (m.homeCrest ? '<img src="' + m.homeCrest + '" alt="">' : "") +
-      "</div>" +
-      '<div class="nx-mid">' + mid + "</div>" +
-      '<div class="nx-team away">' +
-        (m.awayCrest ? '<img src="' + m.awayCrest + '" alt="">' : "") +
-        '<span class="nm' + ownerCls(m.away) + '">' + m.away + "</span>" + capMark(m.away) +
-      "</div>" +
-    "</div>" +
-    '<div class="nx-foot">' + where + "</div></div>";
-}
-
-function paint() { renderScore(); renderNext(); renderPickLists(); renderGroups(); buildEditor(); }
+function paint() { renderScore(); renderPickLists(); renderGroups(); buildEditor(); }
 
 function showSetup(info) {
   const friendly = {
