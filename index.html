@@ -92,11 +92,12 @@
   .fav-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin-bottom: 12px; }
   .fav-label { font-family: "Space Mono", monospace; font-size: 11px; letter-spacing: .18em; text-transform: uppercase; color: var(--gold); }
   .fav-when { font-family: "Space Mono", monospace; font-size: 12px; color: var(--muted); }
-  .fav-comp { display: flex; height: 34px; border-radius: 8px; overflow: hidden; border: 1px solid var(--line); }
-  .fav-cell { height: 100%; display: flex; align-items: center; justify-content: center; overflow: hidden;
+  .fav-comp { display: flex; height: 36px; border-radius: 8px; overflow: hidden; border: 1px solid var(--line); }
+  .fav-cell { height: 100%; display: flex; align-items: center; justify-content: center; gap: 5px; overflow: hidden;
     font-family: "Space Mono", monospace; font-size: 10.5px; font-weight: 700; white-space: nowrap;
-    cursor: default; transition: width .4s ease; }
-  .fav-cell .lbl { padding: 0 5px; overflow: hidden; text-overflow: ellipsis; }
+    cursor: default; transition: width .4s ease; box-shadow: inset -1px 0 0 rgba(255,255,255,.6); }
+  .fav-cell img { height: 18px; width: auto; max-width: 70%; object-fit: contain; display: block; }
+  .fav-cell .lbl { overflow: hidden; text-overflow: ellipsis; }
   .fav-divide { width: 2px; background: var(--panel); flex: none; }
   .fav-detail { margin-top: 9px; font-family: "Space Mono", monospace; font-size: 12px; color: var(--muted); min-height: 1.25em; }
   .fav-detail b { color: var(--text); }
@@ -623,20 +624,22 @@ function renderFavoured() {
   const cPct = 100 - nPct;
 
   // colour ramps: deepest = each side's biggest favourite, palest = its longshots
-  const N_DEEP = [164,22,26], N_LITE = [236,172,175], C_DEEP = [27,122,60], C_LITE = [172,217,186];
-  const lerp = (a, b, t) => [Math.round(a[0]+(b[0]-a[0])*t), Math.round(a[1]+(b[1]-a[1])*t), Math.round(a[2]+(b[2]-a[2])*t)];
-  const txtOn = (c) => ((0.299*c[0] + 0.587*c[1] + 0.114*c[2]) / 255) > 0.62 ? "#20242C" : "#fff";
+  const crestMap = {};
+  for (const g of (DATA?.groups || [])) for (const tm of g.table) if (tm.crest) crestMap[norm(tm.name)] = tm.crest;
   const cell = (t, owner, rankFrac) => {
     const w = t.p / total * 100;
-    const c = lerp(owner === "nandini" ? N_DEEP : C_DEEP, owner === "nandini" ? N_LITE : C_LITE, rankFrac);
+    const base = owner === "nandini" ? "164,22,26" : "27,122,60";
+    const alpha = (0.30 - 0.22 * rankFrac).toFixed(3); // favourite deeper, longshot paler
     const pct = Math.round(t.p * 100);
-    let label = "";
-    if (w >= 14) label = t.name + " " + pct + "%";
-    else if (w >= 5) label = pct + "%";
-    return '<div class="fav-cell" style="width:' + w + "%;background:rgb(" + c[0] + "," + c[1] + "," + c[2] + ");color:" + txtOn(c) + '"' +
+    const crest = crestMap[norm(t.name)];
+    const flag = crest ? '<img src="' + crest + '" alt="">' : "";
+    let inner = "";
+    if (w >= 9) inner = flag + '<span class="lbl">' + pct + "%</span>";
+    else if (w >= 4) inner = flag;
+    return '<div class="fav-cell" style="width:' + w + "%;background:rgba(" + base + "," + alpha + ");color:#20242C\"" +
       ' data-name="' + encodeURIComponent(t.name) + '" data-pct="' + pct + '" data-owner="' + owner + '"' +
       ' title="' + t.name + " \u2014 " + pct + "% (" + (owner === "nandini" ? "Nandini" : "Chris") + ')">' +
-      (label ? '<span class="lbl">' + label + "</span>" : "") + "</div>";
+      inner + "</div>";
   };
   const nN = sides.nandini.length, cN = sides.chris.length;
   const nCells = sides.nandini.map((t, i) => cell(t, "nandini", nN > 1 ? i / (nN - 1) : 0)).join("");
@@ -659,7 +662,7 @@ function renderFavoured() {
       '<div class="fav-names"><span class="n">Nandini ' + nPct + '%</span><span class="c">Chris ' + cPct + '%</span></div>' +
       '<div class="fav-detail" id="favDetail">' + defDetail + "</div>" +
       '<div class="fav-foot">Each band is one team, sized by its chance of winning the World Cup &mdash; ' +
-        "deepest colour is each side&rsquo;s favourite. Predicts the title, not your group-stage points race.</div>" +
+        "flags mark the contenders, deeper colour is each side&rsquo;s favourite. Predicts the title, not your group-stage points race.</div>" +
     "</div>";
 
   const detail = document.getElementById("favDetail");
