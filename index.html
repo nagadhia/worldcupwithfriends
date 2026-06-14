@@ -92,11 +92,14 @@
   .fav-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin-bottom: 12px; }
   .fav-label { font-family: "Space Mono", monospace; font-size: 11px; letter-spacing: .18em; text-transform: uppercase; color: var(--gold); }
   .fav-when { font-family: "Space Mono", monospace; font-size: 12px; color: var(--muted); }
-  .fav-bar { display: flex; height: 32px; border-radius: 8px; overflow: hidden; border: 1px solid var(--line); }
-  .fav-seg { display: flex; align-items: center; font-family: "Space Mono", monospace; font-size: 12px; font-weight: 700;
-    color: #fff; min-width: 38px; transition: width .4s ease; }
-  .fav-seg.n { background: var(--nandini); justify-content: flex-start; padding-left: 10px; }
-  .fav-seg.c { background: var(--chris); justify-content: flex-end; padding-right: 10px; }
+  .fav-comp { display: flex; height: 34px; border-radius: 8px; overflow: hidden; border: 1px solid var(--line); }
+  .fav-cell { height: 100%; display: flex; align-items: center; justify-content: center; overflow: hidden;
+    font-family: "Space Mono", monospace; font-size: 10.5px; font-weight: 700; white-space: nowrap;
+    cursor: default; transition: width .4s ease; }
+  .fav-cell .lbl { padding: 0 5px; overflow: hidden; text-overflow: ellipsis; }
+  .fav-divide { width: 2px; background: var(--panel); flex: none; }
+  .fav-detail { margin-top: 9px; font-family: "Space Mono", monospace; font-size: 12px; color: var(--muted); min-height: 1.25em; }
+  .fav-detail b { color: var(--text); }
   .fav-names { display: flex; justify-content: space-between; margin-top: 6px;
     font-family: "Anton", sans-serif; text-transform: uppercase; font-size: 14px; letter-spacing: .02em; }
   .fav-names .n { color: var(--nandini); }
@@ -590,35 +593,70 @@ function renderFavoured() {
   const od = DATA?.odds;
   if (!od || !od.available || !od.teamProb) { host.innerHTML = ""; return; }
   const tp = od.teamProb;
-  const sum = { nandini: 0, chris: 0 };
-  const favs = { nandini: [], chris: [] };
+  const sides = { nandini: [], chris: [] };
+  let total = 0;
   for (const name in tp) {
     const o = ownerOf(name); if (!o) continue;
-    sum[o] += tp[name];
-    favs[o].push({ name, p: tp[name] });
+    sides[o].push({ name, p: tp[name] }); total += tp[name];
   }
-  const total = sum.nandini + sum.chris;
-  if (total <= 0) { host.innerHTML = ""; return; }
-  const nPct = Math.round(100 * sum.nandini / total);
+  if (total <= 0 || (!sides.nandini.length && !sides.chris.length)) { host.innerHTML = ""; return; }
+  sides.nandini.sort((a, b) => b.p - a.p);
+  sides.chris.sort((a, b) => b.p - a.p);
+  const sideSum = (o) => sides[o].reduce((s, t) => s + t.p, 0);
+  const nPct = Math.round(100 * sideSum("nandini") / total);
   const cPct = 100 - nPct;
-  for (const o of ["nandini", "chris"]) favs[o].sort((a, b) => b.p - a.p);
-  const topList = (o) => favs[o].slice(0, 3).map((f) => f.name + " " + Math.round(f.p * 100) + "%").join(" &middot; ") || "&mdash;";
+
+  // colour ramps: deepest = each side's biggest favourite, palest = its longshots
+  const N_DEEP = [164,22,26], N_LITE = [236,172,175], C_DEEP = [27,122,60], C_LITE = [172,217,186];
+  const lerp = (a, b, t) => [Math.round(a[0]+(b[0]-a[0])*t), Math.round(a[1]+(b[1]-a[1])*t), Math.round(a[2]+(b[2]-a[2])*t)];
+  const txtOn = (c) => ((0.299*c[0] + 0.587*c[1] + 0.114*c[2]) / 255) > 0.62 ? "#20242C" : "#fff";
+  const cell = (t, owner, rankFrac) => {
+    const w = t.p / total * 100;
+    const c = lerp(owner === "nandini" ? N_DEEP : C_DEEP, owner === "nandini" ? N_LITE : C_LITE, rankFrac);
+    const pct = Math.round(t.p * 100);
+    let label = "";
+    if (w >= 14) label = t.name + " " + pct + "%";
+    else if (w >= 5) label = pct + "%";
+    return '<div class="fav-cell" style="width:' + w + "%;background:rgb(" + c[0] + "," + c[1] + "," + c[2] + ");color:" + txtOn(c) + '"' +
+      ' data-name="' + encodeURIComponent(t.name) + '" data-pct="' + pct + '" data-owner="' + owner + '"' +
+      ' title="' + t.name + " \u2014 " + pct + "% (" + (owner === "nandini" ? "Nandini" : "Chris") + ')">' +
+      (label ? '<span class="lbl">' + label + "</span>" : "") + "</div>";
+  };
+  const nN = sides.nandini.length, cN = sides.chris.length;
+  const nCells = sides.nandini.map((t, i) => cell(t, "nandini", nN > 1 ? i / (nN - 1) : 0)).join("");
+  // render Chris smallest -> largest so the biggest favourite anchors the right edge
+  const cCells = sides.chris.slice().reverse().map((t) => {
+    const rank = sides.chris.indexOf(t); // 0 = largest
+    return cell(t, "chris", cN > 1 ? rank / (cN - 1) : 0);
+  }).join("");
+
+  const lead = sides.nandini[0], lead2 = sides.chris[0];
+  const defDetail = "Hover or tap a band &mdash; leaders: <b>" + (lead ? lead.name : "?") + "</b> " +
+    (lead ? Math.round(lead.p * 100) : 0) + "% &middot; <b>" + (lead2 ? lead2.name : "?") + "</b> " +
+    (lead2 ? Math.round(lead2.p * 100) : 0) + "%";
+
   host.innerHTML =
     '<div class="fav-card">' +
       '<div class="fav-head"><span class="fav-label">Who&rsquo;s favoured</span>' +
         '<span class="fav-when">Bookmakers&rsquo; title odds</span></div>' +
-      '<div class="fav-bar">' +
-        '<div class="fav-seg n" style="width:' + nPct + '%">' + nPct + "%</div>" +
-        '<div class="fav-seg c" style="width:' + cPct + '%">' + cPct + "%</div>" +
-      "</div>" +
-      '<div class="fav-names"><span class="n">Nandini</span><span class="c">Chris</span></div>' +
-      '<div class="fav-favs">' +
-        "<div><b>Nandini&rsquo;s top hopes</b>" + topList("nandini") + "</div>" +
-        "<div><b>Chris&rsquo;s top hopes</b>" + topList("chris") + "</div>" +
-      "</div>" +
-      '<div class="fav-foot">Combined chance each player owns the eventual champion, from bookmakers&rsquo; outright odds. ' +
-        "This predicts the title &mdash; not your group-stage points race.</div>" +
+      '<div class="fav-comp">' + nCells + '<div class="fav-divide"></div>' + cCells + "</div>" +
+      '<div class="fav-names"><span class="n">Nandini ' + nPct + '%</span><span class="c">Chris ' + cPct + '%</span></div>' +
+      '<div class="fav-detail" id="favDetail">' + defDetail + "</div>" +
+      '<div class="fav-foot">Each band is one team, sized by its chance of winning the World Cup &mdash; ' +
+        "deepest colour is each side&rsquo;s favourite. Predicts the title, not your group-stage points race.</div>" +
     "</div>";
+
+  const detail = document.getElementById("favDetail");
+  host.querySelectorAll(".fav-cell").forEach((c) => {
+    const show = () => {
+      const nm = decodeURIComponent(c.dataset.name);
+      const who = c.dataset.owner === "nandini" ? "Nandini" : "Chris";
+      detail.innerHTML = "<b>" + nm + "</b> &mdash; " + c.dataset.pct + "% &middot; " + who + "&rsquo;s";
+    };
+    c.addEventListener("mouseenter", show);
+    c.addEventListener("click", show);
+    c.addEventListener("mouseleave", () => { detail.innerHTML = defDetail; });
+  });
 }
 
 function paint() { renderScore(); renderFavoured(); renderNext(); renderPickLists(); renderGroups(); buildEditor(); }
