@@ -15,8 +15,8 @@
     --line:       #26375A;
     --text:       #EAEEF6;
     --muted:      #8696B0;
-    --nandini:    #c00215;  /* Nandini's colour */
-    --chris:      #008f54;  /* Chris's colour */
+    --nandini:    #FF5D6C;  /* Nandini's colour */
+    --chris:      #38D6C0;  /* Chris's colour */
     --gold:       #E9B949;
     --through:    #51CF66;
     --third:      #E3A008;
@@ -98,8 +98,12 @@
     font-size: 17px; margin: 0 0 10px; letter-spacing: .03em; }
   .pickcol.nandini h3 { color: var(--nandini); }
   .pickcol.chris h3 { color: var(--chris); }
-  .team-line { display: grid; grid-template-columns: 18px 1fr auto auto; align-items: center;
+  .team-line { display: grid; grid-template-columns: 18px 1fr auto auto auto; align-items: center;
     gap: 9px; padding: 7px 2px; border-top: 1px solid var(--ink-3); font-size: 14px; }
+  .capbadge { font-family: "Space Mono", monospace; font-size: 9px; font-weight: 700; letter-spacing: .03em;
+    color: var(--ink); background: var(--gold); padding: 1px 5px; border-radius: 6px; margin-left: 6px;
+    vertical-align: middle; white-space: nowrap; }
+  .capstar { color: var(--gold); font-size: 12px; margin-left: 3px; }
   .team-line:first-of-type { border-top: 0; }
   .team-line img { width: 18px; height: 18px; object-fit: contain; }
   .team-line .grp { font-family: "Space Mono", monospace; font-size: 11px; color: var(--muted); }
@@ -139,6 +143,27 @@
   tr.chris td.tname::after { content: "C"; color: var(--chris); background: rgba(56,214,192,.14); }
   tr.qual td.pos { color: var(--through); }
   tr.qual td.pos::before { content: "\25B8 "; }
+
+  .nextup { margin-top: 14px; }
+  .nx-card { background: var(--ink-2); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; }
+  .nx-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin-bottom: 12px; }
+  .nx-label { font-family: "Space Mono", monospace; font-size: 11px; letter-spacing: .18em; text-transform: uppercase; color: var(--gold); }
+  .nx-label.live { color: var(--out); }
+  .nx-when { font-family: "Space Mono", monospace; font-size: 12px; color: var(--muted); }
+  .nx-teams { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 12px; }
+  .nx-team { display: flex; align-items: center; gap: 10px; min-width: 0; }
+  .nx-team.home { justify-content: flex-end; text-align: right; }
+  .nx-team.away { justify-content: flex-start; }
+  .nx-team img { width: 30px; height: 30px; object-fit: contain; flex: none; }
+  .nx-team .nm { font-family: "Anton", sans-serif; font-size: clamp(16px, 3.4vw, 24px); text-transform: uppercase;
+    letter-spacing: .01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .nx-team .nm.nandini { color: var(--nandini); }
+  .nx-team .nm.chris { color: var(--chris); }
+  .nx-cap { color: var(--gold); font-size: 13px; flex: none; }
+  .nx-mid { font-family: "Anton", sans-serif; font-size: 22px; color: var(--muted); padding: 0 4px;
+    font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .nx-foot { margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--ink-3);
+    font-family: "Space Mono", monospace; font-size: 11px; color: var(--muted); letter-spacing: .08em; text-transform: uppercase; }
 
   .editor { display: none; margin: 18px 0 0; background: var(--ink-2);
     border: 1px solid var(--gold); border-radius: 14px; padding: 16px; }
@@ -221,6 +246,8 @@
     </div>
   </section>
 
+  <section class="nextup" id="nextup" aria-label="Next match"></section>
+
   <div class="sec-head"><h2>The picks</h2><div class="rule"></div></div>
   <div class="picks">
     <div class="pickcol nandini"><h3>Nandini</h3><div id="nandiniList"></div></div>
@@ -235,11 +262,13 @@
       <span><i class="sw" style="background:var(--through)"></i> Top 2 &mdash; qualifying</span>
       <span><i class="sw" style="background:var(--third)"></i> 3rd &mdash; best-thirds race</span>
       <span><i class="sw" style="background:var(--out)"></i> Out</span>
+      <span><i class="sw" style="background:var(--gold)"></i> Captain &times;2</span>
       <span><i class="sw" style="background:var(--nandini)"></i> Nandini</span>
       <span><i class="sw" style="background:var(--chris)"></i> Chris</span>
     </div>
     <p><b>Scoreboard</b> = the total league points each person's teams have earned
-      (win 3, draw 1). <b>Through</b> counts teams currently in a top-2 spot. The eight
+      (win 3, draw 1), with each captain &mdash; <b>Brazil</b> for Nandini, <b>Argentina</b> for Chris &mdash;
+      counting double. <b>Through</b> counts teams currently in a top-2 spot. The eight
       best third-placed teams also advance, so 3rd place is still alive &mdash; that's marked amber.
       Data: football-data.org, refreshed every 60s. <span id="srcStamp"></span></p>
   </footer>
@@ -315,6 +344,11 @@ function buildOwnerMap() {
 let PICKS = loadPicks();
 let OWNER = buildOwnerMap();
 
+/* ---- captains: their league points count double ---- */
+const CAPTAINS = ["Brazil", "Argentina"];
+const CAPSET = new Set(CAPTAINS.map(norm));
+function isCaptain(name) { return CAPSET.has(norm(name)); }
+
 function loadPicks() {
   try { const raw = localStorage.getItem(STORE_KEY); if (raw) return JSON.parse(raw); } catch (e) {}
   return { nandini: [...DEFAULT_PICKS.nandini], chris: [...DEFAULT_PICKS.chris] };
@@ -347,7 +381,7 @@ function renderScore() {
   for (const owner of ["nandini","chris"]) {
     for (const name of PICKS[owner]) {
       const row = findTeam(name); if (!row) continue;
-      tally[owner].pts += row.points || 0;
+      tally[owner].pts += (row.points || 0) * (isCaptain(name) ? 2 : 1);
       tally[owner].gf  += row.gf || 0;
       if (row.position <= 2) tally[owner].thr += 1;
     }
@@ -385,7 +419,7 @@ function renderPickLists() {
       el.className = "team-line";
       el.innerHTML =
         (row.crest ? '<img src="' + row.crest + '" alt="">' : "<span></span>") +
-        "<span>" + row.name + "</span>" +
+        "<span>" + row.name + (isCaptain(row.name) ? ' <span class="capbadge" title="Captain — points count double">C&times;2</span>' : "") + "</span>" +
         '<span class="grp">' + GROUP_LABEL(row.group) + " \u00B7 " + row.position + ord(row.position) + "</span>" +
         '<span class="chip ' + st.cls + '">' + st.label + "</span>" +
         '<span class="pts-pill">' + row.points + "</span>";
@@ -414,7 +448,8 @@ function renderGroups() {
       body += '<tr class="row ' + (owner || "") + " " + qual + '">' +
         '<td class="pos">' + t.position + "</td>" +
         '<td class="tname">' + (t.crest ? '<img src="' + t.crest + '" alt="">' : "") +
-          "<span>" + (t.shortName || t.name) + "</span></td>" +
+          "<span>" + (t.shortName || t.name) + "</span>" +
+          (isCaptain(t.name) ? '<span class="capstar" title="Captain — points count double">&#9733;</span>' : "") + "</td>" +
         "<td>" + t.played + "</td><td>" + t.won + "</td><td>" + t.draw + "</td><td>" + t.lost + "</td>" +
         "<td>" + (t.gd > 0 ? "+" + t.gd : t.gd) + '</td><td class="pts">' + t.points + "</td></tr>";
     }
@@ -482,7 +517,54 @@ async function load() {
   }
 }
 
-function paint() { renderScore(); renderPickLists(); renderGroups(); buildEditor(); }
+function relTime(date) {
+  const diff = date - new Date();
+  if (diff <= 0) return "kicking off";
+  const m = Math.round(diff / 60000);
+  if (m < 60) return "in " + m + "m";
+  const h = Math.floor(m / 60), mm = m % 60;
+  if (h < 24) return "in " + h + "h" + (mm ? " " + mm + "m" : "");
+  const d = Math.floor(h / 24);
+  return "in " + d + "d" + ((h % 24) ? " " + (h % 24) + "h" : "");
+}
+function whenLabel(date) {
+  return date.toLocaleString([], { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+}
+
+function renderNext() {
+  const host = document.getElementById("nextup");
+  const ms = DATA?.matches || [];
+  const live = ms.find((m) => m.status === "IN_PLAY" || m.status === "PAUSED");
+  const next = ms.find((m) => m.status === "SCHEDULED" || m.status === "TIMED");
+  const m = live || next;
+  if (!m) { host.innerHTML = ""; return; }
+  const isLive = !!live;
+  const d = new Date(m.utcDate);
+  const ownerCls = (name) => { const o = ownerOf(name); return o ? " " + o : ""; };
+  const capMark = (name) => isCaptain(name) ? '<span class="nx-cap" title="Captain">&#9733;</span>' : "";
+  const mid = isLive ? ((m.homeScore ?? 0) + " &ndash; " + (m.awayScore ?? 0)) : "v";
+  const label = isLive ? '<span class="nx-label live">&#9679; Live now</span>'
+                       : '<span class="nx-label">Next up</span>';
+  const when = isLive ? '<span class="nx-when">In play</span>'
+                      : '<span class="nx-when">' + whenLabel(d) + " &middot; " + relTime(d) + "</span>";
+  const where = m.group ? GROUP_LABEL(m.group) : (m.stage || "").replace(/_/g, " ");
+  host.innerHTML =
+    '<div class="nx-card"><div class="nx-head">' + label + when + "</div>" +
+    '<div class="nx-teams">' +
+      '<div class="nx-team home">' +
+        '<span class="nm' + ownerCls(m.home) + '">' + m.home + "</span>" + capMark(m.home) +
+        (m.homeCrest ? '<img src="' + m.homeCrest + '" alt="">' : "") +
+      "</div>" +
+      '<div class="nx-mid">' + mid + "</div>" +
+      '<div class="nx-team away">' +
+        (m.awayCrest ? '<img src="' + m.awayCrest + '" alt="">' : "") +
+        '<span class="nm' + ownerCls(m.away) + '">' + m.away + "</span>" + capMark(m.away) +
+      "</div>" +
+    "</div>" +
+    '<div class="nx-foot">' + where + "</div></div>";
+}
+
+function paint() { renderScore(); renderNext(); renderPickLists(); renderGroups(); buildEditor(); }
 
 function showSetup(info) {
   const friendly = {
