@@ -11,6 +11,54 @@ const BASE = "https://api.football-data.org/v4";
 let cache = { at: 0, data: null };
 const TTL_MS = 60 * 1000;
 
+// ---- Optional: bookmaker "to win the World Cup" odds (The Odds API) ----
+const ODDS_BASE = "https://api.the-odds-api.com/v4";
+const ODDS_TTL_MS = 3 * 60 * 60 * 1000; // 3h — outright odds move slowly; keeps us well under the free quota
+let oddsCache = { at: 0, data: null };
+
+async function getOdds(key) {
+  if (!key) return { available: false, reason: "no_key" };
+  const now = Date.now();
+  if (oddsCache.data && now - oddsCache.at < ODDS_TTL_MS) return oddsCache.data;
+  try {
+    const url = ODDS_BASE + "/sports/soccer_fifa_world_cup_winner/odds" +
+      "?regions=uk&oddsFormat=decimal&apiKey=" + encodeURIComponent(key);
+    const r = await fetch(url);
+    if (!r.ok) {
+      const t = await r.text();
+      return { available: false,
+        reason: r.status === 401 ? "bad_key" : r.status === 422 ? "market_unavailable" : "error",
+        status: r.status, detail: t.slice(0, 200) };
+    }
+    const arr = await r.json();
+    // Average each team's implied probability (1/decimal) across books, then normalise to remove the overround.
+    const sums = {}, counts = {};
+    for (const ev of (Array.isArray(arr) ? arr : [])) {
+      for (const bk of (ev.bookmakers || [])) {
+        for (const mk of (bk.markets || [])) {
+          if (mk.key !== "outrights") continue;
+          for (const oc of (mk.outcomes || [])) {
+            if (!oc.price || oc.price <= 1) continue;
+            sums[oc.name] = (sums[oc.name] || 0) + 1 / oc.price;
+            counts[oc.name] = (counts[oc.name] || 0) + 1;
+          }
+        }
+      }
+    }
+    const names = Object.keys(sums);
+    if (!names.length) return { available: false, reason: "no_outcomes" };
+    let total = 0; const avg = {};
+    for (const n of names) { avg[n] = sums[n] / counts[n]; total += avg[n]; }
+    const teamProb = {};
+    for (const n of names) teamProb[n] = avg[n] / total;
+    const data = { available: true, updated: new Date().toISOString(), teamProb, teams: names.length, source: "the-odds-api.com" };
+    oddsCache = { at: now, data };
+    return data;
+  } catch (e) {
+    return { available: false, reason: "exception", detail: String(e).slice(0, 200) };
+  }
+}
+
 export default async function handler(req, res) {
   const token = process.env.FOOTBALL_DATA_TOKEN;
 
@@ -106,6 +154,7 @@ export default async function handler(req, res) {
       season: standings.season || null,
       groups,
       matches: trimmedMatches,
+      odds: await getOdds(process.env.THE_ODDS_API_KEY),
     };
 
     cache = { at: now, data: payload };
