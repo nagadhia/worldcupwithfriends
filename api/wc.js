@@ -16,10 +16,10 @@ const ODDS_BASE = "https://api.the-odds-api.com/v4";
 const ODDS_TTL_MS = 3 * 60 * 60 * 1000; // 3h — outright odds move slowly; keeps us well under the free quota
 let oddsCache = { at: 0, data: null };
 
-async function getOdds(key) {
+async function getOdds(key, force) {
   if (!key) return { available: false, reason: "no_key" };
   const now = Date.now();
-  if (oddsCache.data && now - oddsCache.at < ODDS_TTL_MS) return oddsCache.data;
+  if (!force && oddsCache.data && now - oddsCache.at < ODDS_TTL_MS) return oddsCache.data;
   try {
     const url = ODDS_BASE + "/sports/soccer_fifa_world_cup_winner/odds" +
       "?regions=uk&oddsFormat=decimal&apiKey=" + encodeURIComponent(key);
@@ -58,6 +58,34 @@ async function getOdds(key) {
     return { available: false, reason: "exception", detail: String(e).slice(0, 200) };
   }
 }
+
+// ---- Optional: persistent odds history (Vercel KV / Upstash Redis, via REST) ----
+function getStore() {
+  const base = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
+  const token = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
+  return base && token ? { base: base.replace(/\/$/, ""), token } : null;
+}
+const HISTORY_KEY = "odds-history";
+async function loadHistory(store) {
+  try {
+    const r = await fetch(store.base + "/get/" + HISTORY_KEY, { headers: { Authorization: "Bearer " + store.token } });
+    if (!r.ok) return [];
+    const j = await r.json();
+    if (!j || !j.result) return [];
+    const arr = JSON.parse(j.result);
+    return Array.isArray(arr) ? arr : [];
+  } catch (e) { return []; }
+}
+async function saveHistory(store, arr) {
+  try {
+    await fetch(store.base + "/set/" + HISTORY_KEY, {
+      method: "POST",
+      headers: { Authorization: "Bearer " + store.token, "Content-Type": "text/plain" },
+      body: JSON.stringify(arr),
+    });
+  } catch (e) { /* ignore write errors */ }
+}
+function roundProbs(o) { const r = {}; for (const k in o) r[k] = Math.round(o[k] * 1e4) / 1e4; return r; }
 
 export default async function handler(req, res) {
   const token = process.env.FOOTBALL_DATA_TOKEN;
@@ -148,14 +176,38 @@ export default async function handler(req, res) {
       }))
       .sort((a, b) => new Date(a.utcDate) - new Date(b.utcDate));
 
+    const finishedCount = trimmedMatches.filter((m) => m.status === "FINISHED").length;
+    let oddsData = await getOdds(process.env.THE_ODDS_API_KEY);
+
+    // Snapshot the odds whenever the finished-game count increases (one point per game).
+    const store = getStore();
+    let history;
+    if (store) {
+      history = await loadHistory(store);
+      if (oddsData.available) {
+        const last = history[history.length - 1];
+        if (!last || finishedCount > last.g) {
+          const fresh = await getOdds(process.env.THE_ODDS_API_KEY, true); // post-game odds
+          if (fresh.available) {
+            oddsData = fresh;
+            history.push({ t: new Date().toISOString(), g: finishedCount, p: roundProbs(fresh.teamProb) });
+            if (history.length > 200) history = history.slice(-200);
+            await saveHistory(store, history);
+          }
+        }
+      }
+    }
+
     const payload = {
       updated: new Date().toISOString(),
       competition: standings.competition?.name || "FIFA World Cup",
       season: standings.season || null,
       groups,
       matches: trimmedMatches,
-      odds: await getOdds(process.env.THE_ODDS_API_KEY),
+      odds: oddsData,
+      finished: finishedCount,
     };
+    if (history) payload.history = history;
 
     cache = { at: now, data: payload };
 

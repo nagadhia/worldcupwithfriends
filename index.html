@@ -109,6 +109,20 @@
     text-transform: uppercase; letter-spacing: .06em; margin-bottom: 3px; }
   .fav-foot { margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--line); font-size: 11.5px; color: var(--muted); }
 
+  .history { margin-top: 14px; }
+  .hist-card { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; }
+  .hist-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin-bottom: 8px; }
+  .hist-label { font-family: "Space Mono", monospace; font-size: 11px; letter-spacing: .18em; text-transform: uppercase; color: var(--gold); }
+  .hist-leg { font-family: "Space Mono", monospace; font-size: 11px; color: var(--muted); display: flex; gap: 12px; }
+  .hist-leg i { width: 9px; height: 9px; border-radius: 2px; display: inline-block; margin-right: 5px; vertical-align: middle; }
+  .hist-svg { width: 100%; height: auto; display: block; }
+  .hist-svg text.ax { fill: var(--muted); font-family: "Space Mono", monospace; font-size: 10px; }
+  .hist-svg line.grid { stroke: var(--line); }
+  .hist-svg line.base { stroke: var(--muted); stroke-dasharray: 3 3; opacity: .55; }
+  .hist-svg polyline.ln { fill: none; stroke-width: 2.5; stroke-linejoin: round; stroke-linecap: round; }
+  .hist-note { color: var(--muted); font-size: 13px; padding: 6px 2px; }
+  .hist-foot { margin-top: 8px; font-size: 11.5px; color: var(--muted); }
+
   .nextup { margin-top: 14px; }
   .nx-card { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; }
   .nx-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin-bottom: 12px; }
@@ -272,6 +286,8 @@
   </section>
 
   <section class="favoured" id="favoured" aria-label="Title odds"></section>
+
+  <section class="history" id="history" aria-label="Odds over time"></section>
 
   <section class="nextup" id="nextup" aria-label="Next match"></section>
 
@@ -659,7 +675,67 @@ function renderFavoured() {
   });
 }
 
-function paint() { renderScore(); renderFavoured(); renderNext(); renderPickLists(); renderGroups(); buildEditor(); }
+function renderHistory() {
+  const host = document.getElementById("history");
+  const hist = DATA?.history;
+  if (hist === undefined) { host.innerHTML = ""; return; } // storage not configured
+
+  // collapse to one Nandini-share value per finished-game count
+  const byG = {};
+  for (const e of hist) {
+    if (!e || !e.p) continue;
+    let n = 0, t = 0;
+    for (const name in e.p) { const o = ownerOf(name); if (!o) continue; t += e.p[name]; if (o === "nandini") n += e.p[name]; }
+    if (t <= 0) continue;
+    byG[e.g] = { g: e.g, t: e.t, n: n / t * 100 };
+  }
+  const series = Object.values(byG).sort((a, b) => a.g - b.g);
+
+  if (series.length < 2) {
+    host.innerHTML = '<div class="hist-card"><div class="hist-head"><span class="hist-label">Odds over time</span></div>' +
+      '<div class="hist-note">This graph fills in as games finish &mdash; the first points appear once results start coming in.</div></div>';
+    return;
+  }
+
+  const W = 720, H = 240, L = 34, R = 12, T = 14, B = 26;
+  const x = (i) => L + i * (W - L - R) / (series.length - 1);
+  const y = (v) => T + (100 - v) * (H - T - B) / 100;
+  const fmt = (iso) => new Date(iso).toLocaleDateString([], { day: "numeric", month: "short" });
+  const ptsN = series.map((s, i) => x(i) + "," + y(s.n)).join(" ");
+  const ptsC = series.map((s, i) => x(i) + "," + y(100 - s.n)).join(" ");
+
+  let grid = "";
+  for (const v of [0, 50, 100]) {
+    grid += '<line class="' + (v === 50 ? "base" : "grid") + '" x1="' + L + '" y1="' + y(v) + '" x2="' + (W - R) + '" y2="' + y(v) + '"/>' +
+      '<text class="ax" x="' + (L - 6) + '" y="' + (y(v) + 3) + '" text-anchor="end">' + v + "</text>";
+  }
+  let dots = "";
+  for (let i = 0; i < series.length; i++) {
+    const s = series[i];
+    dots += '<circle r="3" cx="' + x(i) + '" cy="' + y(s.n) + '" style="fill:var(--nandini)">' +
+      "<title>after " + s.g + " games \u00B7 " + fmt(s.t) + ": Nandini " + Math.round(s.n) + "% \u2013 Chris " + Math.round(100 - s.n) + "%</title></circle>";
+    dots += '<circle r="3" cx="' + x(i) + '" cy="' + y(100 - s.n) + '" style="fill:var(--chris)"></circle>';
+  }
+  const xlabels = '<text class="ax" x="' + L + '" y="' + (H - 8) + '" text-anchor="start">' + fmt(series[0].t) + "</text>" +
+    '<text class="ax" x="' + (W - R) + '" y="' + (H - 8) + '" text-anchor="end">' + fmt(series[series.length - 1].t) + "</text>";
+  const svg = '<svg class="hist-svg" viewBox="0 0 ' + W + " " + H + '" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">' +
+    grid +
+    '<polyline class="ln" style="stroke:var(--chris)" points="' + ptsC + '"/>' +
+    '<polyline class="ln" style="stroke:var(--nandini)" points="' + ptsN + '"/>' +
+    dots + xlabels + "</svg>";
+
+  const last = series[series.length - 1];
+  host.innerHTML = '<div class="hist-card">' +
+    '<div class="hist-head"><span class="hist-label">Odds over time</span>' +
+      '<span class="hist-leg"><span><i style="background:var(--nandini)"></i>Nandini</span>' +
+      '<span><i style="background:var(--chris)"></i>Chris</span></span></div>' +
+    svg +
+    '<div class="hist-foot">Each point is a snapshot taken after a game finished. Now: Nandini ' +
+      Math.round(last.n) + "% &ndash; Chris " + Math.round(100 - last.n) + "%.</div>" +
+  "</div>";
+}
+
+function paint() { renderScore(); renderFavoured(); renderHistory(); renderNext(); renderPickLists(); renderGroups(); buildEditor(); }
 
 function showSetup(info) {
   const friendly = {
