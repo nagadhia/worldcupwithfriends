@@ -124,6 +124,32 @@
   .hist-note { color: var(--muted); font-size: 13px; padding: 6px 2px; }
   .hist-foot { margin-top: 8px; font-size: 11.5px; color: var(--muted); }
 
+  .toby { margin-top: 14px; }
+  .toby-card { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; }
+  .toby-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin-bottom: 12px; }
+  .toby-label { font-family: "Space Mono", monospace; font-size: 11px; letter-spacing: .18em; text-transform: uppercase; color: var(--gold); }
+  .toby-when { font-family: "Space Mono", monospace; font-size: 12px; color: var(--muted); }
+  .toby-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
+  .toby-stat { background: var(--tint); border-radius: 10px; padding: 10px 12px; }
+  .toby-stat .v { font-family: "Anton", sans-serif; font-size: 26px; line-height: 1; }
+  .toby-stat .k { font-family: "Space Mono", monospace; font-size: 10.5px; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); margin-top: 5px; }
+  .toby-fav-label { font-family: "Space Mono", monospace; font-size: 11px; color: var(--muted); margin-bottom: 6px; }
+  .toby-bar { display: flex; height: 26px; border-radius: 7px; overflow: hidden; border: 1px solid var(--line); }
+  .toby-bar span { display: flex; align-items: center; color: #fff; font-family: "Space Mono", monospace; font-size: 11px; font-weight: 700; }
+  .toby-bar .n { background: var(--nandini); justify-content: flex-start; padding-left: 9px; }
+  .toby-bar .c { background: var(--chris); justify-content: flex-end; padding-right: 9px; }
+  .toby-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px 16px; margin-top: 14px; }
+  .toby-g { font-size: 12.5px; display: flex; align-items: center; gap: 8px; }
+  .toby-g b { font-family: "Space Mono", monospace; font-size: 11px; color: var(--muted); width: 14px; flex: none; }
+  .toby-g .q { display: inline-flex; align-items: center; gap: 4px; }
+  .toby-g .d { width: 7px; height: 7px; border-radius: 50%; display: inline-block; flex: none; }
+  .toby-g .d.good { background: var(--through); }
+  .toby-g .d.mid { background: var(--third); }
+  .toby-g .d.bad { background: var(--out); }
+  .toby-g .d.grey { background: var(--line); }
+  .toby-foot { margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--line); font-size: 11.5px; color: var(--muted); }
+  @media (max-width: 720px) { .toby-stats, .toby-grid { grid-template-columns: 1fr; } }
+
   .nextup { margin-top: 14px; }
   .nx-card { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; }
   .nx-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin-bottom: 12px; }
@@ -290,6 +316,8 @@
 
   <section class="history" id="history" aria-label="Odds over time"></section>
 
+  <section class="toby" id="toby" aria-label="Toby's predictions"></section>
+
   <section class="nextup" id="nextup" aria-label="Next match"></section>
 
   <div class="sec-head"><h2>The picks</h2><div class="rule"></div></div>
@@ -353,6 +381,24 @@ const DEFAULT_PICKS = {
     "Colombia","Uzbekistan",        // K
     "England","Panama"              // L
   ]
+};
+
+/* ===================== TOBY'S PREDICTIONS =====================
+   Each group in Toby's predicted finishing order (1st to 4th).
+   Names are matched loosely, like the picks. Edit here if he revises. */
+const TOBY = {
+  A: ["Mexico", "Korea", "Czech", "South Africa"],
+  B: ["Switzerland", "Canada", "Bosnia", "Qatar"],
+  C: ["Brazil", "Morocco", "Scotland", "Haiti"],
+  D: ["USA", "Paraguay", "Turkey", "Australia"],
+  E: ["Germany", "Ecuador", "Ivory Coast", "Curacao"],
+  F: ["Netherlands", "Sweden", "Japan", "Tunisia"],
+  G: ["Belgium", "Egypt", "Iran", "New Zealand"],
+  H: ["Spain", "Uruguay", "Cape Verde", "Saudi Arabia"],
+  I: ["France", "Senegal", "Norway", "Iraq"],
+  J: ["Argentina", "Austria", "Algeria", "Jordan"],
+  K: ["Portugal", "Colombia", "Congo DR", "Uzbekistan"],
+  L: ["England", "Croatia", "Ghana", "Panama"],
 };
 
 const GROUP_LABEL = (g) => (g || "").replace("GROUP_", "Group ");
@@ -620,7 +666,8 @@ function renderFavoured() {
   sides.nandini.sort((a, b) => b.p - a.p);
   sides.chris.sort((a, b) => b.p - a.p);
   const sideSum = (o) => sides[o].reduce((s, t) => s + t.p, 0);
-  const nPct = Math.round(100 * sideSum("nandini") / total);
+  const expN = sideSum("nandini"), expC = sideSum("chris");
+  const nPct = Math.round(100 * expN / total);
   const cPct = 100 - nPct;
 
   // colour ramps: deepest = each side's biggest favourite, palest = its longshots
@@ -650,19 +697,20 @@ function renderFavoured() {
   }).join("");
 
   const lead = sides.nandini[0], lead2 = sides.chris[0];
-  const defDetail = "Hover or tap a band &mdash; leaders: <b>" + (lead ? lead.name : "?") + "</b> " +
+  const defDetail = "Hover or tap a band. Most likely to qualify: <b>" + (lead ? lead.name : "?") + "</b> " +
     (lead ? Math.round(lead.p * 100) : 0) + "% &middot; <b>" + (lead2 ? lead2.name : "?") + "</b> " +
     (lead2 ? Math.round(lead2.p * 100) : 0) + "%";
 
   host.innerHTML =
     '<div class="fav-card">' +
-      '<div class="fav-head"><span class="fav-label">Who&rsquo;s favoured</span>' +
-        '<span class="fav-when">Bookmakers&rsquo; title odds</span></div>' +
+      '<div class="fav-head"><span class="fav-label">Reaching the knockouts</span>' +
+        '<span class="fav-when">Chance of a top-2 or best-third finish</span></div>' +
       '<div class="fav-comp">' + nCells + '<div class="fav-divide"></div>' + cCells + "</div>" +
-      '<div class="fav-names"><span class="n">Nandini ' + nPct + '%</span><span class="c">Chris ' + cPct + '%</span></div>' +
+      '<div class="fav-names"><span class="n">Nandini ' + expN.toFixed(1) + '</span><span class="c">Chris ' + expC.toFixed(1) + "</span></div>" +
       '<div class="fav-detail" id="favDetail">' + defDetail + "</div>" +
-      '<div class="fav-foot">Each band is one team, sized by its chance of winning the World Cup &mdash; ' +
-        "flags mark the contenders, deeper colour is each side&rsquo;s favourite. Predicts the title, not your group-stage points race.</div>" +
+      '<div class="fav-foot">Each band is one team; the % is its chance of reaching the knockouts ' +
+        "(top two, or one of the eight best third-placed teams), from simulating the rest of each group on the live match odds. " +
+        "The numbers above are each player&rsquo;s expected qualifiers.</div>" +
     "</div>";
 
   const detail = document.getElementById("favDetail");
@@ -670,7 +718,7 @@ function renderFavoured() {
     const show = () => {
       const nm = decodeURIComponent(c.dataset.name);
       const who = c.dataset.owner === "nandini" ? "Nandini" : "Chris";
-      detail.innerHTML = "<b>" + nm + "</b> &mdash; " + c.dataset.pct + "% &middot; " + who + "&rsquo;s";
+      detail.innerHTML = "<b>" + nm + "</b> &mdash; " + c.dataset.pct + "% to qualify &middot; " + who + "&rsquo;s";
     };
     c.addEventListener("mouseenter", show);
     c.addEventListener("click", show);
@@ -695,7 +743,7 @@ function renderHistory() {
   const series = Object.values(byG).sort((a, b) => a.g - b.g);
 
   if (series.length < 2) {
-    host.innerHTML = '<div class="hist-card"><div class="hist-head"><span class="hist-label">Odds over time</span></div>' +
+    host.innerHTML = '<div class="hist-card"><div class="hist-head"><span class="hist-label">Qualifying odds over time</span></div>' +
       '<div class="hist-note">This graph fills in as games finish &mdash; the first points appear once results start coming in.</div></div>';
     return;
   }
@@ -729,16 +777,74 @@ function renderHistory() {
 
   const last = series[series.length - 1];
   host.innerHTML = '<div class="hist-card">' +
-    '<div class="hist-head"><span class="hist-label">Odds over time</span>' +
+    '<div class="hist-head"><span class="hist-label">Qualifying odds over time</span>' +
       '<span class="hist-leg"><span><i style="background:var(--nandini)"></i>Nandini</span>' +
       '<span><i style="background:var(--chris)"></i>Chris</span></span></div>' +
     svg +
-    '<div class="hist-foot">Each point is a snapshot taken after a game finished. Now: Nandini ' +
-      Math.round(last.n) + "% &ndash; Chris " + Math.round(100 - last.n) + "%.</div>" +
+    '<div class="hist-foot">Each point is a snapshot after a game finished &mdash; share of expected qualifiers. ' +
+      "Now: Nandini " + Math.round(last.n) + "% &ndash; Chris " + Math.round(100 - last.n) + "%.</div>" +
   "</div>";
 }
 
-function paint() { renderScore(); renderFavoured(); renderHistory(); renderNext(); renderPickLists(); renderGroups(); buildEditor(); }
+function renderToby() {
+  const host = document.getElementById("toby");
+  if (!DATA?.groups?.length) { host.innerHTML = ""; return; }
+
+  const cur = {};
+  let allComplete = true;
+  for (const g of DATA.groups) for (const t of g.table) {
+    cur[norm(t.name)] = { pos: t.position, played: t.played };
+    if (t.played < 3) allComplete = false;
+  }
+
+  let qRight = 0, qTot = 0, eRight = 0, eTot = 0;
+  const fav = { nandini: 0, chris: 0 };
+  const rows = [];
+  for (const L in TOBY) {
+    const order = TOBY[L];
+    const c0 = cur[norm(order[0])];
+    const started = c0 ? c0.played > 0 : false;
+    const cells = [];
+    for (let i = 0; i < order.length; i++) {
+      const predName = order[i], c = cur[norm(predName)], predPos = i + 1;
+      if (started && c) { eTot++; if (c.pos === predPos) eRight++; }
+      if (predPos <= 2) {
+        const o = ownerOf(predName); if (o) fav[o]++;
+        if (started && c) { qTot++; if (c.pos <= 2) qRight++; }
+        const dot = !started || !c ? "grey" : (c.pos <= 2 ? "good" : c.pos === 3 ? "mid" : "bad");
+        cells.push({ name: predName, dot });
+      }
+    }
+    rows.push({ L, cells });
+  }
+
+  const favTot = fav.nandini + fav.chris || 1;
+  const nW = Math.round(100 * fav.nandini / favTot);
+  const grid = rows.map((r) =>
+    '<div class="toby-g"><b>' + r.L + "</b>" +
+    r.cells.map((c) => '<span class="q"><i class="d ' + c.dot + '"></i>' + c.name + "</span>").join("") +
+    "</div>").join("");
+  const stamp = allComplete ? "Final" : "So far";
+  const qShow = qTot ? qRight + "/" + qTot : "&ndash;";
+  const eShow = eTot ? eRight + "/" + eTot : "&ndash;";
+
+  host.innerHTML = '<div class="toby-card">' +
+    '<div class="toby-head"><span class="toby-label">Toby&rsquo;s predictions</span>' +
+      '<span class="toby-when">' + stamp + " &middot; group stage</span></div>" +
+    '<div class="toby-stats">' +
+      '<div class="toby-stat"><div class="v">' + qShow + '</div><div class="k">Qualifiers right (top 2)</div></div>' +
+      '<div class="toby-stat"><div class="v">' + eShow + '</div><div class="k">Exact placings</div></div>' +
+    "</div>" +
+    '<div class="toby-fav-label">His 24 predicted qualifiers, by owner</div>' +
+    '<div class="toby-bar"><span class="n" style="width:' + nW + '%">Nandini ' + fav.nandini + "</span>" +
+      '<span class="c" style="width:' + (100 - nW) + '%">Chris ' + fav.chris + "</span></div>" +
+    '<div class="toby-grid">' + grid + "</div>" +
+    '<div class="toby-foot">Scored against the live tables; only groups that have kicked off count, and it locks in as &ldquo;Final&rdquo; once each group is done. ' +
+      "Dots: green = currently top two, amber = third, grey = not yet played.</div>" +
+  "</div>";
+}
+
+function paint() { renderScore(); renderFavoured(); renderHistory(); renderToby(); renderNext(); renderPickLists(); renderGroups(); buildEditor(); }
 
 function showSetup(info) {
   const friendly = {
