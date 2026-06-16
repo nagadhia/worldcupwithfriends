@@ -16,7 +16,7 @@
     --tint:     #F3EDE1;  /* subtle fill / row separators */
     --text:     #20242C;  /* near-black ink */
     --muted:    #837D70;  /* warm grey */
-    --nandini:  #bb181e;  /* deep red */
+    --nandini:  #A4161A;  /* deep red */
     --chris:    #1B7A3C;  /* football green */
     --gold:     #B7791F;  /* amber accent (captain) */
     --through:  #2E9E44;  /* qualifying */
@@ -381,6 +381,27 @@
 </div>
 
 <script>
+/* ---- loose name matching (defined first: used throughout) ---- */
+const ALIASES = {
+  southkorea:"korea", korearepublic:"korea", korea:"korea",
+  czechrepublic:"czech", czechia:"czech",
+  ivorycoast:"ivory", cotedivoire:"ivory", cotdivoire:"ivory",
+  turkey:"turkey", turkiye:"turkey",
+  iran:"iran", iriran:"iran",
+  bosnia:"bosnia", bosniaandherzegovina:"bosnia", bosniaherzegovina:"bosnia",
+  congodr:"drcongo", drcongo:"drcongo", democraticrepublicofthecongo:"drcongo",
+  congo:"drcongo",
+  usa:"usa", unitedstates:"usa", unitedstatesofamerica:"usa", us:"usa",
+  capeverde:"capeverde", caboverde:"capeverde", capeverdeislands:"capeverde", cv:"capeverde",
+  curacao:"curacao",
+  southafrica:"southafrica"
+};
+function norm(s) {
+  let x = (s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase().replace(/[^a-z0-9]/g, "");
+  return ALIASES[x] || x;
+}
+
 /* ============================ PICKS ============================
    Each person's 24 teams, two per group. Names are matched loosely,
    so spelling/accents don't matter (Turkey = Türkiye, etc.).
@@ -441,26 +462,6 @@ const GROUP_LABEL = (g) => (g || "").replace("GROUP_", "Group ");
 const STORE_KEY = "wc-nandini-chris-picks-v1";
 let DATA = null;
 
-/* ---- loose name matching ---- */
-const ALIASES = {
-  southkorea:"korea", korearepublic:"korea", korea:"korea",
-  czechrepublic:"czech", czechia:"czech",
-  ivorycoast:"ivory", cotedivoire:"ivory", cotdivoire:"ivory",
-  turkey:"turkey", turkiye:"turkey",
-  iran:"iran", iriran:"iran",
-  bosnia:"bosnia", bosniaandherzegovina:"bosnia", bosniaherzegovina:"bosnia",
-  congodr:"drcongo", drcongo:"drcongo", democraticrepublicofthecongo:"drcongo",
-  congo:"drcongo",
-  usa:"usa", unitedstates:"usa", unitedstatesofamerica:"usa", us:"usa",
-  capeverde:"capeverde", caboverde:"capeverde", capeverdeislands:"capeverde", cv:"capeverde",
-  curacao:"curacao",
-  southafrica:"southafrica"
-};
-function norm(s) {
-  let x = (s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase().replace(/[^a-z0-9]/g, "");
-  return ALIASES[x] || x;
-}
 function buildOwnerMap() {
   const m = {};
   for (const owner of ["nandini", "chris"])
